@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const argv = require('minimist')(process.argv.slice(2));
+const colors  = require('colors/safe');
+const path = require('path');
+const fs = require('fs')
+
+process.title ='file-simple-control'
+
+const print = createPrint();
+const root = {};
+
+if(argv.h || argv.help) printHelpInfo();
+if(argv.v || argv.version) printVersion();
+if(argv.p || argv.prifix) setPrefix();
+
+function createPrint(){
+    return {
+        info(text){
+            console.log(text)
+        },
+        error(text){
+            console.log(colors.red(text))
+        }
+    }
+}
+
+function printHelpInfo(){
+    print.info(getHelpInfo());
+    process.exit();
+
+    function getHelpInfo(){
+        return [
+            'usage: dynamic-pack [path] [options]',
+            '',
+            'options',
+            '-h --help          打印这个列表并退出',
+            '-v --version       打印当前版本并退出',
+            '-p --prefix        设置文件前缀'
+        ].join('\n');
+    }
+}
+
+function printVersion(){
+    print.info('v' + require('../package.json').version);
+    process.exit();
+}
+
+async function tryExecute(callback){
+    try {
+        return await callback();
+    } catch (err) {
+        print.error(err.message)
+    }
+}
+
+function setPrefix(){
+    tryExecute(setPrefixCore);
+
+    function setPrefixCore(){
+        const newPrefix = argv.p || argv.prefix;
+        const rootPath = getWinPath(process.cwd());
+        const files = fs.readdirSync(rootPath);
+        files.map(filename=>{
+            const sep = '-';
+            if(!filename.includes(sep)) throw new Error("文件名缺少指定分隔符！");
+            const [prefix,name] = filename.split(sep);
+            if(!prefix) throw new Error("文件名缺少前缀！");
+            const newFileName = ''.concat(addZero(newPrefix),'-',name);
+            fs.renameSync(filename,newFileName);
+        });
+    }
+}
+
+function getWinPath(result){
+    return result.replace(/\\/g, '/');
+}
+
+function addZero(n){
+    return n<10 ? '0'.concat(n) : n;
+}
