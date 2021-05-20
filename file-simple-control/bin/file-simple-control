@@ -4,17 +4,21 @@
 
 const argv = require('minimist')(process.argv.slice(2));
 const colors  = require('colors/safe');
-const path = require('path');
+// const path = require('path');
 const fs = require('fs')
 
-process.title ='file-simple-control'
-
+const sep = '-';
 const print = createPrint();
-const root = {};
 
-if(argv.h || argv.help) printHelpInfo();
-if(argv.v || argv.version) printVersion();
-if(argv.p || argv.prifix) setPrefix();
+tryExecute(main);
+
+function main(){
+    process.title ='file-simple-control'
+    if(argv.h || argv.help) printHelpInfo();
+    if(argv.v || argv.version) printVersion();
+    if(argv.p || argv.prifix) setPrefix();
+    if(argv.s || argv.suffix) setSuffix();
+}
 
 function createPrint(){
     return {
@@ -38,7 +42,8 @@ function printHelpInfo(){
             'options',
             '-h --help          打印这个列表并退出',
             '-v --version       打印当前版本并退出',
-            '-p --prefix        设置文件前缀'
+            '-p --prefix        设置文件前缀',
+            '-s --suffix        批量修改文件后缀，参数base,start,end'
         ].join('\n');
     }
 }
@@ -57,27 +62,64 @@ async function tryExecute(callback){
 }
 
 function setPrefix(){
-    tryExecute(setPrefixCore);
+    const newPrefix = argv.p || argv.prefix;
+    const rootPath = getRootPath();
+    const files = fs.readdirSync(rootPath);
+    files.map(filename=>{
+        checkSep(filename);
+        const [prefix,name] = filename.split(sep);
+        if(!prefix) throw new Error("文件名缺少前缀！");
+        const newFileName = ''.concat(addZero(newPrefix),'-',name);
+        fs.renameSync(filename,newFileName);
+    });
 
-    function setPrefixCore(){
-        const newPrefix = argv.p || argv.prefix;
-        const rootPath = getWinPath(process.cwd());
-        const files = fs.readdirSync(rootPath);
-        files.map(filename=>{
-            const sep = '-';
-            if(!filename.includes(sep)) throw new Error("文件名缺少指定分隔符！");
-            const [prefix,name] = filename.split(sep);
-            if(!prefix) throw new Error("文件名缺少前缀！");
-            const newFileName = ''.concat(addZero(newPrefix),'-',name);
-            fs.renameSync(filename,newFileName);
-        });
+    function addZero(n){
+        return n<10 ? '0'.concat(n) : n;
     }
+}
+
+function setSuffix(){
+    const [base,start,end] = getSuffixParams();
+
+    const rootPath = getRootPath();
+    const files = fs.readdirSync(rootPath);
+    const newFileNames = files.map(filename=>{
+        checkSep(filename);
+        const [prefix,name] = filename.split(sep);
+        const [value,suffix] = name.split('.');
+        return `${prefix}-${getNewValue(value)}.${suffix}`;
+    });
+    newFileNames.forEach((x,i)=>fs.renameSync(files[i],x))
+
+    function getNewValue(v){
+        if(v < start || v > end) return v;
+        const newValue = Number(v) + Number(base);
+        if(newValue <= 0) throw new Error('转换出错：文件主体名必须大于0');
+        if(isNaN(newValue)) throw new Error('转换出错：文件主体名必须是数字')
+        return addZero(newValue);
+
+        function addZero(n){
+            return n<100 ? '0'.concat(n) : n;
+        }
+    }
+
+    function getSuffixParams(){
+        const suffixParamsString = argv.s || argv.suffix;
+        if(typeof suffixParamsString !== "string") throw new Error('-s --suffix 参数必须是字符串！');
+        const suffixParams = suffixParamsString.split(',');
+        if(suffixParams.length < 2) throw new Error('-s --suffix 参数传递不全');
+        return suffixParams;
+    }
+}
+
+function getRootPath(){
+    return getWinPath(process.cwd());
 }
 
 function getWinPath(result){
     return result.replace(/\\/g, '/');
 }
 
-function addZero(n){
-    return n<10 ? '0'.concat(n) : n;
+function checkSep(filename){
+    if(!filename.includes(sep)) throw new Error("文件名缺少指定分隔符！");
 }
