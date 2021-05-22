@@ -82,18 +82,23 @@ function setSuffix(){
     const [base,start,end] = getSuffixParams();
 
     const rootPath = getRootPath();
-    const files = fs.readdirSync(rootPath);
+
+    //TODO 这里默认文件是按名称进行排序的且文件以数字进行命名，重置顺序让文件从大到小进行覆写以避免其他文件被覆盖，这里使用排序更符合需求，不过js对于这种'01-450.png'的字符串进行sort排序并不能保证按所需排序，想要处理相对麻烦，暂时没有必要，所以使用reverse作为临时方案，不过某些情况下可能出错
+    const files = fs.readdirSync(rootPath).reverse();
+
     const newFileNames = files.map(filename=>{
         checkSep(filename);
         const [prefix,name] = filename.split(sep);
         const [value,suffix] = name.split('.');
-        return `${prefix}-${getNewValue(value)}.${suffix}`;
+        return `${prefix}-${getNewValue(Number(value))}.${suffix}`;
     });
-    newFileNames.forEach((x,i)=>fs.renameSync(files[i],x))
+    newFileNames.forEach((x,i)=>{
+        // fs.renameSync(files[i],x)
+    })
 
     function getNewValue(v){
-        if(v < start || v > end) return v;
-        const newValue = Number(v) + Number(base);
+        if(v < start || v > end) return v;//注意，比较必须使用数字，如果使用字符串，会有类似 '460' < '50' 这种情况出现
+        const newValue = v + base;
         if(newValue <= 0) throw new Error('转换出错：文件主体名必须大于0');
         if(isNaN(newValue)) throw new Error('转换出错：文件主体名必须是数字')
         return addZero(newValue);
@@ -108,7 +113,7 @@ function setSuffix(){
         if(typeof suffixParamsString !== "string") throw new Error('-s --suffix 参数必须是字符串！');
         const suffixParams = suffixParamsString.split(',');
         if(suffixParams.length < 2) throw new Error('-s --suffix 参数传递不全');
-        return suffixParams;
+        return suffixParams.map(x=>Number(x));
     }
 }
 
