@@ -93,7 +93,7 @@ function setSuffix(){
         return `${prefix}-${getNewValue(Number(value))}.${suffix}`;
     });
     newFileNames.forEach((x,i)=>{
-        // fs.renameSync(files[i],x)
+        fs.renameSync(files[i],x)
     })
 
     function getNewValue(v){
