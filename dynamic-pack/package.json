@@ -1,0 +1,24 @@
+{
+  "name": "dynamic-pack",
+  "version": "2.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./bin/dynamic-pack --config=./test/dp.config.json",
+    "upload": "npm publish --registry http://registry.npmjs.org"
+  },
+  "author": "ylf",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "minimist": "^1.2.5"
+  },
+  "files": [
+    "lib",
+    "bin"
+  ],
+  "bin": {
+    "dynamic-pack": "./bin/dynamic-pack",
+    "dp": "./bin/dynamic-pack"
+  }
+}
