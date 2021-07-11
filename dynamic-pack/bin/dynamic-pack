@@ -8,8 +8,6 @@ const path = require('path');
 const fs = require('fs');
 const {exec} = require('child_process');
 
-//    "dp -c=xxx/error.config.json"
-
 class DpError {
     constructor() {
         this._value = [];
@@ -43,8 +41,9 @@ class DpError {
 
     createLog() {
         if(!this._hasError) return null;
-        const logName = `error_log_${(new Date()).getTime()}`;
+        const logName = `error_log_${(new Date()).getTime()}.txt`;
         fs.writeFileSync(`${this._path}/${logName}`, dpError.output());
+        process.exit();
     }
 
     transformError(){
@@ -62,14 +61,15 @@ class DpError {
 process.title = 'dynamic-pack'
 
 const print = createPrint();
-let dpError = new DpError();
+const dpError = new DpError();
 
 tryExecute(
     () => {
         if (argv.h || argv.help) return printHelpInfo();
         if (argv.v || argv.version) return printVersion();
         if (argv.c || argv.config) return setByConfig();
-        print.info("不是dynamic-pack提供的命令，可以执行dp -h查看当前支持的命令！")
+        print.info("不是dynamic-pack提供的命令，可以执行dp -h查看当前支持的命令！");
+        process.exit();
     },
     null,
     ()=>dpError.createLog())
@@ -99,8 +99,10 @@ function printVersion() {
 async function setByConfig() {
     await tryExecute(async () => {
         let originalMainPanel = null;
-        const config = require(getAbsoluteFilePath(argv.c || argv.config));
-        dpError.setPath(config.errorLogPath)
+        const absoluteConfigPath = getAbsoluteFilePath(argv.c || argv.config);
+        const dirName = path.dirname(absoluteConfigPath);
+        const config = require(absoluteConfigPath);
+        dpError.setPath(getResolveName(config.errorLogPath))
         const isRecovery = config.isRecovery;
         const classify = config.classify;
         const classifyConfig = config.classifyConfig[classify];
@@ -117,14 +119,15 @@ async function setByConfig() {
             print.success('已成功调整特殊模块！');
 
             function setMainPanel() {
-                const sourceFile = readFile(getAbsoluteFilePath(classifyConfig.sourceFile));
-                if (isRecovery) originalMainPanel = readFile(getAbsoluteFilePath(classifyConfig.targetFile));
+                const sourceFile = readFile(getResolveName(classifyConfig.sourceFile));
+                if (isRecovery) originalMainPanel = readFile(getResolveName(classifyConfig.targetFile));
                 writeTargetPanel(sourceFile);
             }
         }
 
         async function exeScripts(scripts) {
-            if (!Array.isArray(scripts)) return null;
+            const hasScripts = Array.isArray(scripts) && (scripts.length > 0);
+            if (!hasScripts) return null;
             print.primary("\n执行自定义scripts！\n");
             const orderList = scripts.map((s) => exec_order(s));
             await Promise.all(orderList);
@@ -141,7 +144,7 @@ async function setByConfig() {
         function replaceModule(sourceKey = 'source', targetKey = 'target') {
             if (!Array.isArray(moduleConfig)) return null;
             moduleConfig.forEach((c) => {
-                const filePath = getAbsoluteFilePath(c.filePath);
+                const filePath = getResolveName(c.filePath);
                 let file = readFile(filePath);
                 c.replaceModules.forEach(x => {
                     file = file.replace(x[sourceKey], x[targetKey]);
@@ -151,7 +154,11 @@ async function setByConfig() {
         }
 
         function writeTargetPanel(file) {
-            fs.writeFileSync(getAbsoluteFilePath(classifyConfig.targetFile), file);
+            fs.writeFileSync(getResolveName(classifyConfig.targetFile), file);
+        }
+
+        function getResolveName(file){
+            return getWinPath(path.resolve(dirName,file));
         }
     })
 }

@@ -13,14 +13,14 @@
     "dp --test",
     "dp -c=xxx/error.config.json"
   ],
-  "errorLogPath": "./test",
+  "errorLogPath": "./",
   "classifyConfig":{
     "ubs": {
-      "sourceFile": "./test/files/otherMain.js",
-      "targetFile": "./test/files/main.js",
+      "sourceFile": "./files/otherMain.js",
+      "targetFile": "./files/main.js",
       "moduleConfig": [
         {
-          "filePath": "./test/files/children/file.js",
+          "filePath": "./files/children/file.js",
           "replaceModules": [
             {
               "source": "import C from './C';",
