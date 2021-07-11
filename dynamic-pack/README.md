@@ -10,8 +10,10 @@
   "scripts": [
     "dp -v",
     "dp -h",
-    "dp -v"
+    "dp --test",
+    "dp -c=xxx/error.config.json"
   ],
+  "errorLogPath": "./test",
   "classifyConfig":{
     "ubs": {
       "sourceFile": "./test/files/otherMain.js",

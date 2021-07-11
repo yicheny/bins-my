@@ -3,9 +3,13 @@
   "isRecovery": true,
   "scripts": [
     "dp -v",
-    "dp -h",
-    "dp --test"
+    "dp -h"
   ],
+  "errorScripts": [
+    "dp --test",
+    "dp -c=xxx/error.config.json"
+  ],
+  "errorLogPath": "./test",
   "classifyConfig":{
     "ubs": {
       "sourceFile": "./test/files/otherMain.js",

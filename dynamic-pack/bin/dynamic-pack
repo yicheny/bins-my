@@ -3,134 +3,192 @@
 'use strict';
 
 const argv = require('minimist')(process.argv.slice(2));
-const colors  = require('colors/safe');
+const colors = require('colors/safe');
 const path = require('path');
 const fs = require('fs');
 const {exec} = require('child_process');
 
+//    "dp -c=xxx/error.config.json"
+
+class DpError {
+    constructor() {
+        this._value = [];
+        this._path = './';
+        this._hasError = null;
+    }
+
+    setHasError(value){
+        this._hasError = value;
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    setPath(value) {
+        if(typeof value !== 'string') return null;
+        this._path = value;
+    }
+
+    output() {
+        this.transformError();
+        this.value.unshift(this.getOutTime())
+        return this.value.join('\n');
+    }
+
+    getOutTime() {
+        const date = new Date();
+        return `日志输出时间：${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate() + 1} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}\n`
+    }
+
+    createLog() {
+        if(!this._hasError) return null;
+        const logName = `error_log_${(new Date()).getTime()}`;
+        fs.writeFileSync(`${this._path}/${logName}`, dpError.output());
+    }
+
+    transformError(){
+        this._value = this.value.map((error)=>{
+            if(error instanceof Error) {
+                return error.stack;
+                // return JSON.stringify(error, Object.getOwnPropertyNames(error));
+            }
+            return error;
+        },)
+    }
+}
 
 
-process.title ='dynamic-pack'
+process.title = 'dynamic-pack'
 
 const print = createPrint();
+let dpError = new DpError();
 
-if(argv.h || argv.help) return printHelpInfo();
-if(argv.v || argv.version) return printVersion();
-if(getConfig()) return setByConfig();
-print.error("不是dynamic-pack提供的命令，可以执行dp -h查看当前支持的命令！")
+tryExecute(
+    () => {
+        if (argv.h || argv.help) return printHelpInfo();
+        if (argv.v || argv.version) return printVersion();
+        if (argv.c || argv.config) return setByConfig();
+        print.info("不是dynamic-pack提供的命令，可以执行dp -h查看当前支持的命令！")
+    },
+    null,
+    ()=>dpError.createLog())
 
 
-function printHelpInfo(){
+function printHelpInfo() {
     print.info(getHelpInfo());
     process.exit();
 
-    function getHelpInfo(){
+    function getHelpInfo() {
         return [
             'usage: dynamic-pack [path] [options]',
             '',
             'options',
             '-h --help              打印这个列表并退出',
             '-v --version           打印当前版本并退出',
-            '-c --config            读取配置'
+            '-c --config            配置文件路径'
         ].join('\n');
     }
 }
 
-function printVersion(){
+function printVersion() {
     print.info('v' + require('../package.json').version);
     process.exit();
 }
 
-function getConfig(){
-    return argv.c || argv.config
-}
-async function setByConfig(){
-    let originalMainPanel = null;
-    const config = require(getAbsoluteFilePath(getConfig()));
-    const isRecovery = config.isRecovery;
-    const classify = config.classify;
-    const classifyConfig = config.classifyConfig[classify];
-    const moduleConfig = classifyConfig.moduleConfig;
+async function setByConfig() {
+    await tryExecute(async () => {
+        let originalMainPanel = null;
+        const config = require(getAbsoluteFilePath(argv.c || argv.config));
+        dpError.setPath(config.errorLogPath)
+        const isRecovery = config.isRecovery;
+        const classify = config.classify;
+        const classifyConfig = config.classifyConfig[classify];
+        const moduleConfig = classifyConfig.moduleConfig;
 
-    dynamic()
-    await exeScripts(config.scripts);
-    if(isRecovery) recovery();
+        dynamic()
+        await exeScripts(config.scripts);
+        if (isRecovery) recovery();
 
-    function dynamic(){
-        setMainPanel();
-        print.success('已成功处理MainPanel！');
-        replaceModule();
-        print.success('已成功调整特殊模块！');
+        function dynamic() {
+            setMainPanel();
+            print.success('已成功处理MainPanel！');
+            replaceModule();
+            print.success('已成功调整特殊模块！');
 
-        function setMainPanel(){
-            const sourceFile = readFile(getAbsoluteFilePath(classifyConfig.sourceFile));
-            if(isRecovery) originalMainPanel = readFile(getAbsoluteFilePath(classifyConfig.targetFile));
-            writeTargetPanel(sourceFile);
+            function setMainPanel() {
+                const sourceFile = readFile(getAbsoluteFilePath(classifyConfig.sourceFile));
+                if (isRecovery) originalMainPanel = readFile(getAbsoluteFilePath(classifyConfig.targetFile));
+                writeTargetPanel(sourceFile);
+            }
         }
-    }
 
-    async function exeScripts(scripts){
-        if(!Array.isArray(scripts)) return null;
-        print.primary("\n执行自定义scripts！\n");
-        const orderList = scripts.map((s)=>exec_order(s));
-        await Promise.all(orderList);
-        print.success("自定义scripts执行完毕！\n")
-    }
+        async function exeScripts(scripts) {
+            if (!Array.isArray(scripts)) return null;
+            print.primary("\n执行自定义scripts！\n");
+            const orderList = scripts.map((s) => exec_order(s));
+            await Promise.all(orderList);
+            print.success("自定义scripts执行完毕！\n")
+        }
 
-    function recovery(){
-        writeTargetPanel(originalMainPanel);
-        replaceModule('target','source');
-        print.success('已成功还原至初始状态！');
-    }
+        function recovery() {
+            writeTargetPanel(originalMainPanel);
+            replaceModule('target', 'source');
+            print.success('已成功还原至初始状态！');
+        }
 
-    //公共方法
-    function replaceModule(sourceKey='source',targetKey='target'){
-        if(!Array.isArray(moduleConfig)) return null;
-        moduleConfig.forEach((c)=>{
-            const filePath = getAbsoluteFilePath(c.filePath);
-            let file = readFile(filePath);
-            c.replaceModules.forEach(x=>{
-                file = file.replace(x[sourceKey],x[targetKey]);
-            });
-            fs.writeFileSync(filePath,file)
-        })
-    }
+        //公共方法
+        function replaceModule(sourceKey = 'source', targetKey = 'target') {
+            if (!Array.isArray(moduleConfig)) return null;
+            moduleConfig.forEach((c) => {
+                const filePath = getAbsoluteFilePath(c.filePath);
+                let file = readFile(filePath);
+                c.replaceModules.forEach(x => {
+                    file = file.replace(x[sourceKey], x[targetKey]);
+                });
+                fs.writeFileSync(filePath, file)
+            })
+        }
 
-    function writeTargetPanel(file){
-        fs.writeFileSync(getAbsoluteFilePath(classifyConfig.targetFile),file);
-    }
+        function writeTargetPanel(file) {
+            fs.writeFileSync(getAbsoluteFilePath(classifyConfig.targetFile), file);
+        }
+    })
 }
-
-
 
 
 //基础方法
-function readFile(path){
-    return fs.readFileSync(path,'utf-8');
+function readFile(path) {
+    return fs.readFileSync(path, 'utf-8');
 }
 
-function getAbsoluteFilePath(filePath){
+function getAbsoluteFilePath(filePath) {
     const rootPath = getWinPath(process.cwd());
-    return getWinPath(path.join(rootPath,filePath));
+    return getWinPath(path.join(rootPath, filePath));
 }
 
-function getWinPath(result){
+function getWinPath(result) {
     return result.replace(/\\/g, '/');
 }
 
-function createPrint(){
+function createPrint() {
     return {
-        info(text){
-            console.log(text)
+        info(...text) {
+            dpError.value.push(text);
+            console.log(...text)
         },
-        primary(coreInfo,...normalInfo){
-            console.log(colors.blue(coreInfo),...normalInfo);
+        primary(coreInfo, ...normalInfo) {
+            dpError.value.push(coreInfo, ...normalInfo);
+            console.log(colors.blue(coreInfo), ...normalInfo);
         },
-        error(coreInfo,...normalInfo){
-            console.log(colors.red(coreInfo),...normalInfo)
+        error(coreInfo, ...normalInfo) {
+            dpError.setHasError(true);
+            dpError.value.push(coreInfo, ...normalInfo);
+            console.log(colors.red(coreInfo), ...normalInfo)
         },
-        success(text){
-            console.log(colors.green(text))
+        success(coreInfo, ...normalInfo) {
+            dpError.value.push(coreInfo, ...normalInfo);
+            console.log(colors.green(coreInfo), ...normalInfo)
         }
     }
 }
@@ -154,4 +212,19 @@ function exec_order(order, info = '') {
         print.error(`${order} error：\n`, err);
         clearInterval(timeId)
     });
+}
+
+async function tryExecute(callback,errorCB,finallyCB) {
+    try {
+        await exe(callback);
+    } catch (error) {
+        print.error('dp执行出错：', error);
+        await exe(errorCB);
+    } finally {
+        await exe(finallyCB);
+    }
+
+    async function exe(fn){
+        if (typeof fn === 'function') return await fn();
+    }
 }
