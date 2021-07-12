@@ -42,7 +42,7 @@ class DpError {
 
     createLog() {
         if(!this._hasError) return null;
-        const logName = `error_log_${(new Date()).getTime()}.txt`;
+        const logName = `dp_error_log_${(new Date()).getTime()}.txt`;
         fs.writeFileSync(`${this._path}/${logName}`, dpError.output());
         process.exit();
     }
