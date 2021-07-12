@@ -2,7 +2,7 @@
   "classify": "ubs",
   "isRecovery": true,
   "scripts": [
-    "mockDp --test"
+
   ],
   "noneScripts": [
     "dp -v",

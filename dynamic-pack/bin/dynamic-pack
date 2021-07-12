@@ -37,7 +37,7 @@ class DpError {
 
     getOutTime() {
         const date = new Date();
-        return `日志输出时间：${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate() + 1} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}\n`
+        return `Log output time：${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate() + 1} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}\n`
     }
 
     createLog() {
@@ -69,7 +69,7 @@ tryExecute(
         if (argv.h || argv.help) return printHelpInfo();
         if (argv.v || argv.version) return printVersion();
         if (argv.c || argv.config) return setByConfig();
-        print.info("不是dynamic-pack提供的命令，可以执行dp -h查看当前支持的命令！");
+        print.info("It is not a command provided by dynamic-pack, you can execute dp -h to view the currently supported commands!");
         process.exit();
     },
     null,
@@ -85,9 +85,9 @@ function printHelpInfo() {
             'usage: dynamic-pack [path] [options]',
             '',
             'options',
-            '-h --help              打印这个列表并退出',
-            '-v --version           打印当前版本并退出',
-            '-c --config            配置文件路径'
+            '-h --help              Print this list and exit',
+            '-v --version           Print the current version and exit',
+            '-c --config            Configuration file path'
         ].join('\n');
     }
 }
@@ -115,9 +115,9 @@ async function setByConfig() {
 
         function dynamic() {
             setMainPanel();
-            print.success('已成功处理MainPanel！');
+            print.success('MainPanel successfully processed!');
             replaceModule();
-            print.success('已成功调整特殊模块！');
+            print.success('Special module successfully processed!');
 
             function setMainPanel() {
                 const sourceFile = readFile(getResolveName(classifyConfig.sourceFile));
@@ -129,16 +129,16 @@ async function setByConfig() {
         async function exeScripts(scripts) {
             const hasScripts = Array.isArray(scripts) && (scripts.length > 0);
             if (!hasScripts) return null;
-            print.primary("\n执行自定义scripts！\n");
+            print.primary("\nExecute custom scripts!\n");
             const orderList = scripts.map((s) => exec_order(s));
             await Promise.all(orderList);
-            print.success("自定义scripts执行完毕！\n")
+            print.success("Custom scripts executed successfully!\n")
         }
 
         function recovery() {
             writeTargetPanel(originalMainPanel);
             replaceModule('target', 'source');
-            print.success('已成功还原至初始状态！');
+            print.success('Successfully restored to the initial state!');
         }
 
         //公共方法
@@ -201,11 +201,16 @@ function createPrint() {
     }
 }
 
+const MAX_EXEC_TIME = 600;//秒
 function exec_order(order, info) {
     info = info || `${order} 执行中：`;
 
     let i = 1;
     const timeId = setInterval(() => {
+        if(i>=MAX_EXEC_TIME) {
+            print.error(`${order} The execution time is too long, end the task!`);
+            return clearInterval(timeId);
+        }
         info && console.log(info, i++);
     }, 1000);
 
@@ -223,9 +228,9 @@ function exec_order(order, info) {
     });
 }
 
-function decode(str = '') {
+function decode(str = '',encode='cp936') {
     const buf = Buffer.from(str, 'binary');
-    return iconv.decode(buf, 'cp936');
+    return iconv.decode(buf, encode);
 }
 
 async function tryExecute(callback,errorCB,finallyCB) {
