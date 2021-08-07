@@ -1,0 +1,20 @@
+{
+  "name": "doc-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./bin/doc-server --config",
+    "upload": "npm publish --registry http://registry.npmjs.org"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "colors": "^1.4.0",
+    "minimist": "^1.2.5"
+  },
+  "bin": {
+    "doc-server": "./bin/doc-server",
+    "ds": "./bin/doc-server"
+  }
+}

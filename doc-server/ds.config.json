@@ -1,0 +1,13 @@
+{
+  "extension": [".md",".js",".json"],
+  "include": {
+    "keyword": [ ],
+    "prefix": [ ],
+    "suffix": [ ]
+  },
+  "exclude": {
+    "keyword": [
+      "node_modules"
+    ]
+  }
+}
