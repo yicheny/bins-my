@@ -38,42 +38,62 @@ function printVersion() {
     exit('v' + require('../package.json').version);
 }
 
-function useConfig(){
-    const configPath = getAbsPath(getRootPath(),getConfigPath());
-    if(!utils.isString(configPath)) return exit('ds.config.json没有设置路径！');
+function useConfig() {
+    const configPath = getAbsPath(getRootPath(), getConfigPath());
+    if (!utils.isString(configPath)) return exit('ds.config.json没有设置路径！');
     runConfig(readJson(configPath));
 
-    function getConfigPath(){
+    function getConfigPath() {
         const config = argv.c || argv.config;
-        if(utils.isTrue(config)) return getDefaultPath();
-        if(utils.isString(config)) return config;
+        if (utils.isTrue(config)) return getDefaultPath();
+        if (utils.isString(config)) return config;
         return null;
 
-        function getDefaultPath(){
+        function getDefaultPath() {
             return './ds.config.json';
         }
     }
 
     function runConfig(config) {
-        if(!utils.isObject(config)) return exit('ds.config.json信息异常！')
+        if (!utils.isObject(config)) return exit('ds.config.json信息异常！')
         const fileList = [];
-        eachFolder(getRootPath(), curryUseFile(config,fileList));
-        console.log('fileList',fileList)
+        const {useFile,filterDir} = curryUseFile(config, fileList)
+        eachFolder(getRootPath(), useFile, filterDir);
+        console.log('fileList', fileList);
 
-        function curryUseFile(config,fileList){
-            const excludeKeywords = config.exclude.keyword;
+        function curryUseFile(config, fileList) {
+            const [excludeFiles, excludeDirs] = getExcludeKeywords(config.exclude);
             const extension = getExtension(config.extension)
 
-            function getExtension(extension){
-                if(utils.isUndefined(extension)) return ['.md'];
-                if(Array.isArray(extension)) return extension;
-                if(utils.isString(extension)) return [extension];
-                throw new Error("extension参数异常！")
+            return {
+                useFile(fullPath, foldedPath, fileName) {
+                    if (excludeFiles.some(word => fullPath.includes(word))) return null;
+                    if (extension.some(x => fileName.endsWith(x))) fileList.push(fullPath)
+                },
+                filterDir: utils.isEmpty(excludeDirs) ? null : filterDir
             }
 
-            return function useFile(fullPath,foldedPath,fileName){
-                if(excludeKeywords.some(word => fullPath.includes(word))) return null;
-                if(extension.some(x=>fileName.endsWith(x))) fileList.push(fullPath)
+            function getExtension(extension) {
+                if (utils.isUndefined(extension)) return ['.md'];
+                if (Array.isArray(extension)) return extension;
+                if (utils.isString(extension)) return [extension];
+                // throw new Error("extension参数异常！")
+                return [];
+            }
+
+            function getExcludeKeywords(excludeKeys) {
+                const excludeFiles = [];
+                const excludeDirs = [];
+                if (!Array.isArray(excludeKeys)) return [excludeFiles, excludeDirs];
+                excludeKeys.forEach(k => {
+                    if (k.endsWith('/')) return excludeDirs.push(k.slice(0, -1));
+                    excludeFiles.push(k);
+                });
+                return [excludeFiles, excludeDirs];
+            }
+
+            function filterDir(dirName){
+                return !excludeDirs.some(word => dirName === word);
             }
         }
     }
@@ -98,12 +118,12 @@ function createPrint() {
     }
 }
 
-function exit(info){
+function exit(info) {
     print.error(info);
     process.exit();
 }
 
-function readJson(path){
+function readJson(path) {
     return require(path);
 }
 
@@ -111,11 +131,11 @@ function readFile(path) {
     return fs.readFileSync(path, 'utf-8');
 }
 
-function getAbsPath(currentPath,relativePath) {
+function getAbsPath(currentPath, relativePath) {
     return getWinPath(path.join(currentPath, relativePath));
 }
 
-function getRootPath(){
+function getRootPath() {
     return getWinPath(process.cwd())
 }
 
@@ -123,15 +143,18 @@ function getWinPath(result) {
     return result.replace(/\\/g, '/');
 }
 
-function eachFolder(dirName,callback){
+function eachFolder(dirName, callback, filter) {
     const dir = fs.readdirSync(dirName);
     dir.forEach(name => {
-        const currentPath = getAbsPath(dirName,name);
-        if(isDirectory(currentPath)) return eachFolder(currentPath,callback);
-        if(utils.isFunction(callback)) return callback(currentPath,dirName,name);
+        const currentPath = getAbsPath(dirName, name);
+        if (isDirectory(currentPath)) {
+            if (!filter) return eachFolder(currentPath, callback, filter);
+            return filter(name) ? eachFolder(currentPath, callback, filter) : null;
+        }
+        if (utils.isFunction(callback)) return callback(currentPath, dirName, name);
     })
 }
 
-function isDirectory(dirPath){
+function isDirectory(dirPath) {
     return fs.statSync(dirPath).isDirectory();
 }

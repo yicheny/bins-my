@@ -16,6 +16,10 @@ function createUtils(){
         isFunction(x){
             return typeof x === 'function';
         },
+        isEmpty(x){
+            if(!Array.isArray(x)) return false;
+            return !x.length;
+        },
         getType(value) {
             let dataType = Object.prototype.toString.call(value);
             dataType = dataType.slice(8, dataType.length - 1);

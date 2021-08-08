@@ -1,13 +1,12 @@
 {
-  "extension": [".md",".js",".json"],
-  "include": {
-    "keyword": [ ],
-    "prefix": [ ],
-    "suffix": [ ]
+  "extension": [".md"],
+  "docServer": {
+    "path": "./test"
   },
-  "exclude": {
-    "keyword": [
-      "node_modules"
-    ]
-  }
+  "include": [
+
+  ],
+  "exclude": [
+    "node_modules/"
+  ]
 }
