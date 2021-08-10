@@ -59,7 +59,8 @@ function useConfig() {
         const fileList = [];
         const {useFile,filterDir} = curryUseFile(config, fileList)
         eachFolder(getRootPath(), useFile, filterDir);
-        console.log('files',fileList)
+        const jsonData = curryCreateJsonData(config.docServer)(fileList)
+        console.log(jsonData)
         // createDocJsonAtPath(config.docServer.path,{docs:fileList});
 
         function curryUseFile(config, fileList) {
@@ -71,7 +72,15 @@ function useConfig() {
                 useFile(fullPath, foldedPath, fileName) {
                     if (includeFiles.every(word => !fullPath.includes(word))) return null;
                     if (excludeFiles.some(word => fullPath.includes(word))) return null;
-                    if (extension.some(x => fileName.endsWith(x))) fileList.push(({name:fileName,path:fullPath}))
+                    let extensionLength = 0;
+                    if (extension.some(x => {
+                        const result = fileName.endsWith(x);
+                        if(result) extensionLength = x.length;
+                        return result;
+                    })) fileList.push({
+                        name:fileName.substring(0,fileName.length - extensionLength),
+                        path:fullPath
+                    })
                 },
                 filterDir: utils.isAllEmpty(excludeDirs,includeDirs) ? null : filterDir
             }
@@ -98,6 +107,25 @@ function useConfig() {
             function filterDir(dirName){
                 if(includeDirs.some(word => dirName === word)) {
                     return !excludeDirs.some(word => dirName === word);
+                }
+            }
+        }
+
+        function curryCreateJsonData(docServer){
+            const serverPath = docServer.path;
+            const serverAbsPath = getAbsPath(getRootPath(),serverPath);
+            const docsPath = docServer.context;
+            const docsAbsPath = getAbsPath(getRootPath(),docsPath);
+
+            return (fileList) => {
+                return {
+                    docsContext:getRelativePath(serverAbsPath,docsAbsPath),
+                    docs:fileList.map(x=>{
+                        return {
+                            name:x.name,
+                            path:getRelativePath(docsAbsPath,x.path)
+                        }
+                    })
                 }
             }
         }
@@ -144,6 +172,11 @@ function readFile(path) {
 
 function getAbsPath(currentPath, relativePath) {
     return getWinPath(path.join(currentPath, relativePath));
+}
+
+function getRelativePath(basePath,otherPath){
+    const p = getWinPath(path.relative(basePath,otherPath))
+    return p.startsWith('.') ? p : './'.concat(p);
 }
 
 function getRootPath() {
