@@ -20,6 +20,9 @@ function createUtils(){
             if(!Array.isArray(x)) return false;
             return !x.length;
         },
+        isAllEmpty(...l){
+            return l.every(x=>this.isEmpty(x));
+        },
         getType(value) {
             let dataType = Object.prototype.toString.call(value);
             dataType = dataType.slice(8, dataType.length - 1);

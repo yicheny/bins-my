@@ -1,10 +1,11 @@
 {
   "extension": [".md"],
   "docServer": {
-    "path": "./test"
+    "path": "./test",
+    "context": "./docs"
   },
   "include": [
-
+    "docs/"
   ],
   "exclude": [
     "node_modules/"

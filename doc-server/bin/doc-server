@@ -59,18 +59,21 @@ function useConfig() {
         const fileList = [];
         const {useFile,filterDir} = curryUseFile(config, fileList)
         eachFolder(getRootPath(), useFile, filterDir);
-        createDocJsonAtPath(config.docServer.path,{docs:fileList});
+        console.log('files',fileList)
+        // createDocJsonAtPath(config.docServer.path,{docs:fileList});
 
         function curryUseFile(config, fileList) {
-            const [excludeFiles, excludeDirs] = getExcludeKeywords(config.exclude);
+            const [excludeFiles, excludeDirs] = getFilterWords(config.exclude);
+            const [includeFiles, includeDirs] = getFilterWords(config.include);
             const extension = getExtension(config.extension)
 
             return {
                 useFile(fullPath, foldedPath, fileName) {
+                    if (includeFiles.every(word => !fullPath.includes(word))) return null;
                     if (excludeFiles.some(word => fullPath.includes(word))) return null;
                     if (extension.some(x => fileName.endsWith(x))) fileList.push(({name:fileName,path:fullPath}))
                 },
-                filterDir: utils.isEmpty(excludeDirs) ? null : filterDir
+                filterDir: utils.isAllEmpty(excludeDirs,includeDirs) ? null : filterDir
             }
 
             function getExtension(extension) {
@@ -81,19 +84,21 @@ function useConfig() {
                 return [];
             }
 
-            function getExcludeKeywords(excludeKeys) {
-                const excludeFiles = [];
-                const excludeDirs = [];
-                if (!Array.isArray(excludeKeys)) return [excludeFiles, excludeDirs];
-                excludeKeys.forEach(k => {
-                    if (k.endsWith('/')) return excludeDirs.push(k.slice(0, -1));
-                    excludeFiles.push(k);
+            function getFilterWords(keys) {
+                const files = [];
+                const dirs = [];
+                if (!Array.isArray(keys)) return [files, dirs];
+                keys.forEach(k => {
+                    files.push(k);
+                    if (k.endsWith('/')) return dirs.push(k.slice(0, -1));
                 });
-                return [excludeFiles, excludeDirs];
+                return [files, dirs];
             }
 
             function filterDir(dirName){
-                return !excludeDirs.some(word => dirName === word);
+                if(includeDirs.some(word => dirName === word)) {
+                    return !excludeDirs.some(word => dirName === word);
+                }
             }
         }
 
