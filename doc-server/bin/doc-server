@@ -59,7 +59,7 @@ function useConfig() {
         const fileList = [];
         const {useFile,filterDir} = curryUseFile(config, fileList)
         eachFolder(getRootPath(), useFile, filterDir);
-        console.log('fileList', fileList);
+        createDocJsonAtPath(config.docServer.path,{docs:fileList});
 
         function curryUseFile(config, fileList) {
             const [excludeFiles, excludeDirs] = getExcludeKeywords(config.exclude);
@@ -68,7 +68,7 @@ function useConfig() {
             return {
                 useFile(fullPath, foldedPath, fileName) {
                     if (excludeFiles.some(word => fullPath.includes(word))) return null;
-                    if (extension.some(x => fileName.endsWith(x))) fileList.push(fullPath)
+                    if (extension.some(x => fileName.endsWith(x))) fileList.push(({name:fileName,path:fullPath}))
                 },
                 filterDir: utils.isEmpty(excludeDirs) ? null : filterDir
             }
@@ -95,6 +95,12 @@ function useConfig() {
             function filterDir(dirName){
                 return !excludeDirs.some(word => dirName === word);
             }
+        }
+
+        function createDocJsonAtPath(serverPath,data){
+            const jsonFolderPath = getAbsPath(getRootPath(),serverPath);
+            const jsonFilePath = getAbsPath(jsonFolderPath,'doc.json');
+            fs.writeFileSync(jsonFilePath,JSON.stringify(data));
         }
     }
 }
