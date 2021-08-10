@@ -60,8 +60,7 @@ function useConfig() {
         const {useFile,filterDir} = curryUseFile(config, fileList)
         eachFolder(getRootPath(), useFile, filterDir);
         const jsonData = curryCreateJsonData(config.docServer)(fileList)
-        console.log(jsonData)
-        // createDocJsonAtPath(config.docServer.path,{docs:fileList});
+        createDocJsonAtPath(config.docServer.path,jsonData);
 
         function curryUseFile(config, fileList) {
             const [excludeFiles, excludeDirs] = getFilterWords(config.exclude);
