@@ -15,7 +15,7 @@ const print = createPrint();
 if (argv.h || argv.help) return printHelpInfo();
 if (argv.v || argv.version) return printVersion();
 if (argv.c || argv.config) return useConfig();
-print.info("It is not a command provided by dynamic-pack, you can execute dp -h to view the currently supported commands!");
+print.info("It is not a command provided by doc-server, you can execute ds -h to view the currently supported commands!");
 process.exit();
 
 function printHelpInfo() {
