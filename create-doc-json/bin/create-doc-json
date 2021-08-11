@@ -15,7 +15,7 @@ const print = createPrint();
 if (argv.h || argv.help) return printHelpInfo();
 if (argv.v || argv.version) return printVersion();
 if (argv.c || argv.config) return useConfig();
-print.info("It is not a command provided by create-doc-json, you can execute ds -h to view the currently supported commands!");
+print.info("It is not a command provided by create-doc-json, you can execute cdj -h to view the currently supported commands!");
 process.exit();
 
 function printHelpInfo() {
@@ -40,7 +40,7 @@ function printVersion() {
 
 function useConfig() {
     const configPath = getAbsPath(getRootPath(), getConfigPath());
-    if (!utils.isString(configPath)) return exit('ds.config.json没有设置路径！');
+    if (!utils.isString(configPath)) return exit('cdj.config.json没有设置路径！');
     runConfig(readJson(configPath));
 
     function getConfigPath() {
@@ -50,12 +50,12 @@ function useConfig() {
         return null;
 
         function getDefaultPath() {
-            return './ds.config.json';
+            return './cdj.config.json';
         }
     }
 
     function runConfig(config) {
-        if (!utils.isObject(config)) return exit('ds.config.json信息异常！')
+        if (!utils.isObject(config)) return exit('cdj.config.json信息异常！')
         const fileList = [];
         const {useFile,filterDir} = curryUseFile(config, fileList)
         eachFolder(getRootPath(), useFile, filterDir);

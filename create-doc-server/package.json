@@ -1,10 +1,10 @@
 {
-  "name": "create-doc-json",
+  "name": "create-doc-server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node bin/create-doc-json --config",
+    "start": "node ./bin/create-doc-server --config",
     "upload": "npm publish --registry http://registry.npmjs.org"
   },
   "author": "",
@@ -14,7 +14,7 @@
     "minimist": "^1.2.5"
   },
   "bin": {
-    "doc-server": "bin/create-doc-json",
-    "ds": "bin/create-doc-json"
+    "doc-server": "./bin/create-doc-server",
+    "ds": "./bin/create-doc-server"
   }
 }

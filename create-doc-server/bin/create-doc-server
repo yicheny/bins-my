@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const argv = require('minimist')(process.argv.slice(2));
+const colors = require('colors/safe');
+const path = require('path');
+const fs = require('fs');
+const {utils} = require('./utils.js');
+
+process.title = 'create-doc-server';
+
+const print = createPrint();
+
+if (argv.h || argv.help) return printHelpInfo();
+if (argv.v || argv.version) return printVersion();
+if (argv.c || argv.config) return useConfig();
+print.info("It is not a command provided by create-doc-server, you can execute cds -h to view the currently supported commands!");
+process.exit();
+
+function printHelpInfo() {
+    print.info(getHelpInfo());
+    process.exit();
+
+    function getHelpInfo() {
+        return [
+            'usage: create-doc-server [path] [options]',
+            '',
+            'options',
+            '-h --help              Print this list and exit',
+            '-v --version           Print the current version and exit',
+            '-c --config            Configuration file path'
+        ].join('\n');
+    }
+}
+
+function printVersion() {
+    exit('v' + require('../package.json').version);
+}
+
+function useConfig() {
+
+}
+
+
+//基础方法
+function createPrint() {
+    return {
+        info(...text) {
+            console.log(...text)
+        },
+        primary(coreInfo) {
+            console.log(colors.blue(coreInfo));
+        },
+        error(coreInfo) {
+            console.log(colors.red(coreInfo))
+        },
+        success(coreInfo) {
+            console.log(colors.green(coreInfo))
+        }
+    }
+}
+
+function exit(info) {
+    print.error(info);
+    process.exit();
+}
+
+function readJson(path) {
+    return require(path);
+}
+
+function readFile(path) {
+    return fs.readFileSync(path, 'utf-8');
+}
+
+function getAbsPath(currentPath, relativePath) {
+    return getWinPath(path.join(currentPath, relativePath));
+}
+
+function getRelativePath(basePath,otherPath){
+    const p = getWinPath(path.relative(basePath,otherPath))
+    return p.startsWith('.') ? p : './'.concat(p);
+}
+
+function getRootPath() {
+    return getWinPath(process.cwd())
+}
+
+function getWinPath(result) {
+    return result.replace(/\\/g, '/');
+}
+
+function eachFolder(dirName, callback, filter) {
+    const dir = fs.readdirSync(dirName);
+    dir.forEach(name => {
+        const currentPath = getAbsPath(dirName, name);
+        if (isDirectory(currentPath)) {
+            if (!filter) return eachFolder(currentPath, callback, filter);
+            return filter(name) ? eachFolder(currentPath, callback, filter) : null;
+        }
+        if (utils.isFunction(callback)) return callback(currentPath, dirName, name);
+    })
+}
+
+function isDirectory(dirPath) {
+    return fs.statSync(dirPath).isDirectory();
+}
