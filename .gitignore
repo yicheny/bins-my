@@ -1,4 +1,4 @@
 */.idea
 */node_modules
 /.idea
-/doc-server/test/
+/create-doc-json/test/
