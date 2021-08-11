@@ -14,7 +14,7 @@
     "minimist": "^1.2.5"
   },
   "bin": {
-    "doc-server": "bin/create-doc-json",
-    "ds": "bin/create-doc-json"
+    "create-doc-json": "bin/create-doc-json",
+    "cdj": "bin/create-doc-json"
   }
 }

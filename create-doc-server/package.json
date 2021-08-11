@@ -14,7 +14,7 @@
     "minimist": "^1.2.5"
   },
   "bin": {
-    "doc-server": "./bin/create-doc-server",
-    "ds": "./bin/create-doc-server"
+    "create-doc-server": "./bin/create-doc-server",
+    "cds": "./bin/create-doc-server"
   }
 }
