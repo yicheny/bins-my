@@ -1,6 +1,6 @@
 {
   "projectName": "docServer",
-  "docsContext": "./docs",
+  "docsContext": "../../../example-my/doc-view-template/demo/doc",
   "port": 6099,
   "createDocJsonPath": true
 }

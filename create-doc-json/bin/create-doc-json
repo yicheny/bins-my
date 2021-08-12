@@ -75,7 +75,7 @@ function useConfig() {
 
             return {
                 useFile(fullPath, foldedPath, fileName) {
-                    if (includeFiles.every(word => !fullPath.includes(word))) return null;
+                    if (!utils.isEmpty(includeDirs) && includeFiles.every(word => !fullPath.includes(word))) return null;
                     if (excludeFiles.some(word => fullPath.includes(word))) return null;
                     let extensionLength = 0;
                     if (extension.some(x => {
@@ -110,7 +110,7 @@ function useConfig() {
             }
 
             function filterDir(dirName){
-                if(includeDirs.some(word => dirName === word)) {
+                if(utils.isEmpty(includeDirs) || includeDirs.some(word => dirName === word)) {
                     return !excludeDirs.some(word => dirName === word);
                 }
             }
