@@ -39,7 +39,27 @@ function printVersion() {
 }
 
 function useConfig() {
+    const configPath = getRootAbsPath(getConfigPath());
+    const config = readJson(configPath);
+    createProject(config);
 
+    function createProject(config){
+        const projectPath = getRootAbsPath(config.projectName)
+        makeDir(projectPath);
+        const templatePath = getAbsPath(__dirname,'../template');
+        copy(templatePath,projectPath);
+    }
+
+    function getConfigPath() {
+        const config = argv.c || argv.config;
+        if (utils.isTrue(config)) return getDefaultPath();
+        if (utils.isString(config)) return config;
+        return null;
+
+        function getDefaultPath() {
+            return './cds.config.json';
+        }
+    }
 }
 
 
@@ -66,6 +86,7 @@ function exit(info) {
     process.exit();
 }
 
+//文件相关方法
 function readJson(path) {
     return require(path);
 }
@@ -78,12 +99,17 @@ function getAbsPath(currentPath, relativePath) {
     return getWinPath(path.join(currentPath, relativePath));
 }
 
+function getRootAbsPath(p){
+    return getAbsPath(getRootPath(),p);
+}
+
 function getRelativePath(basePath,otherPath){
     const p = getWinPath(path.relative(basePath,otherPath))
     return p.startsWith('.') ? p : './'.concat(p);
 }
 
 function getRootPath() {
+    //等同于process.cwd() 等同于path.resolve('./);
     return getWinPath(process.cwd())
 }
 
@@ -97,12 +123,38 @@ function eachFolder(dirName, callback, filter) {
         const currentPath = getAbsPath(dirName, name);
         if (isDirectory(currentPath)) {
             if (!filter) return eachFolder(currentPath, callback, filter);
-            return filter(name) ? eachFolder(currentPath, callback, filter) : null;
+            return filter(currentPath,dirName,name) ? eachFolder(currentPath, callback, filter) : null;
         }
         if (utils.isFunction(callback)) return callback(currentPath, dirName, name);
     })
 }
 
 function isDirectory(dirPath) {
+    if(!fs.existsSync(dirPath)) return false;
     return fs.statSync(dirPath).isDirectory();
+}
+
+//创建目录-会删除旧目录【仅空目录】
+function makeDir(dirName){
+    if(isDirectory(dirName)) fs.rmdirSync(dirName);
+    return fs.mkdirSync(dirName);
+}
+
+function copy(sourcePath,targetPath){
+    // console.log(source,target);
+    eachFolder(sourcePath,copyFile,copyFolder)
+
+    function copyFile(currentPath){
+        const relativePath = getRelativePath(sourcePath,currentPath);
+        const targetFolderPath = getAbsPath(targetPath,relativePath);
+        const file = readFile(currentPath);
+        fs.writeFileSync(targetFolderPath,file);
+    }
+
+    function copyFolder(currentPath){
+        const relativePath = getRelativePath(sourcePath,currentPath);
+        const targetFolderPath = getAbsPath(targetPath,relativePath);
+        makeDir(targetFolderPath);
+        return true;
+    }
 }
