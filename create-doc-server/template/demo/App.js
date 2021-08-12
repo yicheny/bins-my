@@ -4,7 +4,7 @@ import { Markdown } from "y-markdown/lib";
 import "./App.scss";
 import { Anchor, Menu, Select } from "./component";
 
-const { docs } = require("./doc.json");
+const { docs } = require(%%DOCS_CONTEXT%%);
 const readDoc = require.context('./doc', false, /.md$/);//注：这个路径必须是写死的
 
 // console.log(require('../../react-keep-router/README.md'));

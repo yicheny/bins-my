@@ -47,7 +47,24 @@ function useConfig() {
         const projectPath = getRootAbsPath(config.projectName)
         makeDir(projectPath);
         const templatePath = getAbsPath(__dirname,'../template');
-        copy(templatePath,projectPath);
+        copy(templatePath,projectPath,setOptions);
+
+        function setOptions(currentPath,dirName,fileName,data){
+            setDocsContext();
+            setPort();
+
+            function setDocsContext(){
+                if(fileName === 'App.js') {
+                    data.file = data.file.replace("%%DOCS_CONTEXT%%",JSON.stringify(config.docsContext || './default_docs'));
+                }
+            }
+
+            function setPort(){
+                if(fileName === 'webpack.config.js') {
+                    data.file = data.file.replace("%%PORT%%",config.port || 6066);
+                }
+            }
+        }
     }
 
     function getConfigPath() {
@@ -134,21 +151,24 @@ function isDirectory(dirPath) {
     return fs.statSync(dirPath).isDirectory();
 }
 
-//创建目录-会删除旧目录【仅空目录】
+//创建目录-如果目录存在则不操作
 function makeDir(dirName){
-    if(isDirectory(dirName)) fs.rmdirSync(dirName);
+    if(isDirectory(dirName)) return ;
     return fs.mkdirSync(dirName);
 }
 
-function copy(sourcePath,targetPath){
+function copy(sourcePath,targetPath,callback){
     // console.log(source,target);
     eachFolder(sourcePath,copyFile,copyFolder)
 
-    function copyFile(currentPath){
+    function copyFile(currentPath,dirName,fileName){
         const relativePath = getRelativePath(sourcePath,currentPath);
         const targetFolderPath = getAbsPath(targetPath,relativePath);
-        const file = readFile(currentPath);
-        fs.writeFileSync(targetFolderPath,file);
+        const data = {
+            file:readFile(currentPath)
+        };
+        if(utils.isFunction(callback)) callback(currentPath,dirName,fileName,data)
+        fs.writeFileSync(targetFolderPath,data.file);
     }
 
     function copyFolder(currentPath){
