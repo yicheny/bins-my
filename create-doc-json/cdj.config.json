@@ -1,11 +1,9 @@
 {
+  "docRootPath": "../../example-my/doc-view-template/demo/doc",
+  "docServerPath": "./test",
   "extension": [".md"],
-  "docServer": {
-    "path": "./test",
-    "context": "./docs"
-  },
   "include": [
-    "docs/"
+    "doc/"
   ],
   "exclude": [
     "node_modules/"

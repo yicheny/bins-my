@@ -1,5 +1,6 @@
 {
   "projectName": "docServer",
   "docsContext": "./docs",
-  "port": 6099
+  "port": 6099,
+  "createDocJsonPath": true
 }

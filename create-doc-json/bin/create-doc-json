@@ -42,6 +42,7 @@ function useConfig() {
     const configPath = getAbsPath(getRootPath(), getConfigPath());
     if (!utils.isString(configPath)) return exit('cdj.config.json没有设置路径！');
     runConfig(readJson(configPath));
+    print.success("doc.json Created successfully!")
 
     function getConfigPath() {
         const config = argv.c || argv.config;
@@ -58,9 +59,14 @@ function useConfig() {
         if (!utils.isObject(config)) return exit('cdj.config.json信息异常！')
         const fileList = [];
         const {useFile,filterDir} = curryUseFile(config, fileList)
-        eachFolder(getRootPath(), useFile, filterDir);
-        const jsonData = curryCreateJsonData(config.docServer)(fileList)
-        createDocJsonAtPath(config.docServer.path,jsonData);
+        eachFolder(getRootDirName(config.docRootPath), useFile, filterDir);
+        const jsonData = curryCreateJsonData(config)(fileList)
+        createDocJsonAtPath(config.docServerPath,jsonData);
+
+        function getRootDirName(docRootPath){
+            const rootPath = getRootPath();
+            return docRootPath ? getAbsPath(rootPath,docRootPath) : rootPath;
+        }
 
         function curryUseFile(config, fileList) {
             const [excludeFiles, excludeDirs] = getFilterWords(config.exclude);
@@ -110,10 +116,10 @@ function useConfig() {
             }
         }
 
-        function curryCreateJsonData(docServer){
-            const serverPath = docServer.path;
+        function curryCreateJsonData(config){
+            const serverPath = config.docServerPath;
             const serverAbsPath = getAbsPath(getRootPath(),serverPath);
-            const docsPath = docServer.context;
+            const docsPath = config.docRootPath;
             const docsAbsPath = getAbsPath(getRootPath(),docsPath);
 
             return (fileList) => {
