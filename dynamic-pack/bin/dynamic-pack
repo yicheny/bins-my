@@ -203,7 +203,7 @@ function createPrint() {
 
 const MAX_EXEC_TIME = 600;//秒
 function exec_order(order, info) {
-    info = info || `${order} 执行中：`;
+    info = info || `${order} in execution:`;
 
     let i = 1;
     const timeId = setInterval(() => {
@@ -237,7 +237,7 @@ async function tryExecute(callback,errorCB,finallyCB) {
     try {
         await exe(callback);
     } catch (error) {
-        print.error('dp执行出错：', error);
+        print.error('dp execution error:', error);
         await exe(errorCB);
     } finally {
         await exe(finallyCB);

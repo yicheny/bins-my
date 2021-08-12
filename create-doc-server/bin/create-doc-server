@@ -3,20 +3,26 @@
 'use strict';
 
 const argv = require('minimist')(process.argv.slice(2));
-const colors = require('colors/safe');
 const path = require('path');
 const fs = require('fs');
 const {utils} = require('./utils.js');
+const {createExecOrder} = require('./exec_order.js');
+const {createPrint} = require('./print.js');
 
 process.title = 'create-doc-server';
 
 const print = createPrint();
+const execOrder = createExecOrder(print);
 
-if (argv.h || argv.help) return printHelpInfo();
-if (argv.v || argv.version) return printVersion();
-if (argv.c || argv.config) return useConfig();
-print.info("It is not a command provided by create-doc-server, you can execute cds -h to view the currently supported commands!");
-process.exit();
+main();
+
+async function main(){
+    if (argv.h || argv.help) return printHelpInfo();
+    if (argv.v || argv.version) return printVersion();
+    if (argv.c || argv.config) return useConfig();
+    print.info("It is not a command provided by create-doc-server, you can execute cds -h to view the currently supported commands!");
+    process.exit();
+}
 
 function printHelpInfo() {
     print.info(getHelpInfo());
@@ -38,10 +44,11 @@ function printVersion() {
     exit('v' + require('../package.json').version);
 }
 
-function useConfig() {
+async function useConfig() {
     const configPath = getRootAbsPath(getConfigPath());
     const config = readJson(configPath);
-    createProject(config);
+    // createProject(config);
+    await execOrder('npm -v')
 
     function createProject(config){
         const projectPath = getRootAbsPath(config.projectName)
@@ -81,23 +88,6 @@ function useConfig() {
 
 
 //基础方法
-function createPrint() {
-    return {
-        info(...text) {
-            console.log(...text)
-        },
-        primary(coreInfo) {
-            console.log(colors.blue(coreInfo));
-        },
-        error(coreInfo) {
-            console.log(colors.red(coreInfo))
-        },
-        success(coreInfo) {
-            console.log(colors.green(coreInfo))
-        }
-    }
-}
-
 function exit(info) {
     print.error(info);
     process.exit();
