@@ -72,6 +72,7 @@ async function useConfig() {
         // makeDir(projectPath);
         const templatePath = getAbsPath(__dirname,'../template');
         copy(templatePath,getRootPath(),setOptions);
+        print.success('The project template was created successfully')
 
         function setOptions(currentPath,dirName,fileName,data){
             setDocsContext();
@@ -79,7 +80,14 @@ async function useConfig() {
 
             function setDocsContext(){
                 if(fileName === 'App.js') {
-                    data.file = data.file.replace("%%DOCS_CONTEXT%%",JSON.stringify(config.docsContext || './default_docs'));
+                    data.file = data.file.replace("%%DOCS_CONTEXT%%",JSON.stringify(getContext(config.docsContext)));
+
+                    function getContext(docsContext){
+                        docsContext = docsContext || './default_docs';
+                        const docsAbsContext= getRootAbsPath(docsContext);//文档所在根目录
+                        const serverAbsContext = getRootAbsPath('./demo');//服务所在根目录
+                        return getRelativePath(serverAbsContext,docsAbsContext);
+                    }
                 }
             }
 
