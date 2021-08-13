@@ -1,5 +1,5 @@
 {
-  "docServerPath": "./docServer/demo",
+  "docServerPath": "./demo",
   "docRootPath": "../../../example-my/doc-view-template/demo/doc",
   "extension": [".md"],
   "include": [

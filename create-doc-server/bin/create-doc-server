@@ -47,14 +47,31 @@ function printVersion() {
 async function useConfig() {
     const configPath = getRootAbsPath(getConfigPath());
     const config = readJson(configPath);
-    // createProject(config);
-    await execOrder('npm -v')
+    createProject(config);
+    await createDocJson(config);
+    await downloadPackage(config);
+
+    async function downloadPackage(config){
+        const downloadMode = config.packageDownload;
+        if(downloadMode === 'yarn') return await execOrder('yarn add');
+        if(downloadMode === 'npm') return await execOrder('npm install');
+        return await execOrder('cnpm install');
+    }
+
+    async function createDocJson(config){
+        await execOrder(`cdj --config=${getDocPath(config.createDocJsonPath)}`);
+
+        function getDocPath(originalPath){
+            if(utils.isTrue(originalPath)) return './cdj.config.json';
+            return originalPath;
+        }
+    }
 
     function createProject(config){
-        const projectPath = getRootAbsPath(config.projectName)
-        makeDir(projectPath);
+        // const projectPath = getRootAbsPath(config.projectName)
+        // makeDir(projectPath);
         const templatePath = getAbsPath(__dirname,'../template');
-        copy(templatePath,projectPath,setOptions);
+        copy(templatePath,getRootPath(),setOptions);
 
         function setOptions(currentPath,dirName,fileName,data){
             setDocsContext();

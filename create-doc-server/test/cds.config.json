@@ -2,5 +2,6 @@
   "projectName": "docServer",
   "docsContext": "../../../example-my/doc-view-template/demo/doc",
   "port": 6099,
-  "createDocJsonPath": true
+  "createDocJsonPath": true,
+  "packageDownload": "cnpm"
 }

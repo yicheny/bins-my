@@ -23,7 +23,7 @@
 ## 通过`cds.config.json`
 ```json5
 {
-  projectName: "docServer",//项目名称【默认在当前目录下创建】
+  /*projectName: "docServer"*/ //项目名称--移除此API，默认直接在当前目录创建
   docsContext: "./docs",//需要配置对应的文档目录，以便webpack可以在运行中动态读取本地文件
   packageDownload: "yarn",//选择下载npm包的方式，非必选，默认是`yarn`，可设置为`npm`、`cnpm`
   port: 6066,//设置服务运行端口，非必填，默认是6066
