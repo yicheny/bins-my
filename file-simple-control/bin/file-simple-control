@@ -99,7 +99,7 @@ function setSuffix(){
 
        function getName(name){
            const [value,suffix] = name.split('.');
-           return `${getNewValue(Number(value))}.${suffix}`;
+           return `${getNewValue(value)}.${suffix}`;
        }
 
        function getNameWithPrefix(filename){
@@ -114,11 +114,12 @@ function setSuffix(){
         })
     }
 
-    function getNewValue(v){
+    function getNewValue(source){
+        const v = Number(source);
         if(v < start || v > end) return addZero(v);//注意，比较必须使用数字，如果使用字符串，会有类似 '460' < '50' 这种情况出现
         const newValue = v + base;
-        if(newValue <= 0) throw new Error('转换出错：文件主体名必须大于0');
-        if(isNaN(newValue)) throw new Error('转换出错：文件主体名必须是数字')
+        if(newValue <= 0) throw new Error(`转换出错：文件主体名必须大于0，${source}`);
+        if(isNaN(newValue)) throw new Error(`转换出错：文件主体名必须是数字，${source}`)
         return addZero(newValue);
 
         function addZero(n){
