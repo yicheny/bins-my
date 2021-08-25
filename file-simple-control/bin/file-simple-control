@@ -84,7 +84,8 @@ function setPrefix(){
 function setSuffix(){
     const [base,start,end] = getSuffixParams();
 
-    renameFiles(getNewFileNames(getRootFiles()))
+    const files = getRootFiles();
+    renameFiles(getNewFileNames(files))
     print.info("批量修改执行完成")
 
     function getNewFileNames(files){
