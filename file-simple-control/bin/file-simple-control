@@ -7,6 +7,7 @@ const colors  = require('colors/safe');
 // const path = require('path');
 const fs = require('fs')
 
+const utils = createUtils();
 const sep = '-';
 const print = createPrint();
 
@@ -18,6 +19,7 @@ function main(){
     if(argv.v || argv.version) printVersion();
     if(argv.p || argv.prifix) setPrefix();
     if(argv.s || argv.suffix) setSuffix();
+    if(argv.r || argv.reset) resetNames();
 }
 
 function createPrint(){
@@ -43,7 +45,8 @@ function printHelpInfo(){
             '-h --help          打印这个列表并退出',
             '-v --version       打印当前版本并退出',
             '-p --prefix        设置文件前缀',
-            '-s --suffix        批量修改文件后缀，参数base,start,end'
+            '-s --suffix        批量修改文件后缀，参数base,start,end',
+            '-r --reset         批量重置文件名'
         ].join('\n');
     }
 }
@@ -65,7 +68,7 @@ function setPrefix(){
     const newPrefix = argv.p || argv.prefix;
     const rootPath = getRootPath();
     const files = fs.readdirSync(rootPath);
-    files.map(filename=>{
+    files.forEach(filename=>{
         checkSep(filename);
         const [prefix,name] = filename.split(sep);
         if(!prefix) throw new Error("文件名缺少前缀！");
@@ -81,11 +84,7 @@ function setPrefix(){
 function setSuffix(){
     const [base,start,end] = getSuffixParams();
 
-    const rootPath = getRootPath();
-
-    //TODO 这里默认文件是按名称进行排序的且文件以数字进行命名，重置顺序让文件从大到小进行覆写以避免其他文件被覆盖，这里使用排序更符合需求，不过js对于这种'01-450.png'的字符串进行sort排序并不能保证按所需排序，想要处理相对麻烦，暂时没有必要，所以使用reverse作为临时方案，不过某些情况下可能出错
-    const files = fs.readdirSync(rootPath).reverse();
-    renameFiles(getNewFileNames(files))
+    renameFiles(getNewFileNames(getRootFiles()))
     print.info("批量修改执行完成")
 
     function getNewFileNames(files){
@@ -116,16 +115,11 @@ function setSuffix(){
 
     function getNewValue(source){
         const v = Number(source);
-        if(v < start || v > end) return addZero(v);//注意，比较必须使用数字，如果使用字符串，会有类似 '460' < '50' 这种情况出现
+        if(v < start || v > end) return utils.addZero(v);//注意，比较必须使用数字，如果使用字符串，会有类似 '460' < '50' 这种情况出现
         const newValue = v + base;
         if(newValue <= 0) throw new Error(`转换出错：文件主体名必须大于0，${source}`);
         if(isNaN(newValue)) throw new Error(`转换出错：文件主体名必须是数字，${source}`)
-        return addZero(newValue);
-
-        function addZero(n){
-            if(n<10) return '00'.concat(n);
-            return n<100 ? '0'.concat(n) : n;
-        }
+        return utils.addZero(newValue);
     }
 
     function getSuffixParams(){
@@ -137,6 +131,18 @@ function setSuffix(){
     }
 }
 
+function resetNames() {
+    const files = getRootFiles();
+    files.forEach((fileName,index) => {
+        const no = files.length - index;
+        fs.renameSync(fileName,`${utils.addZero(no)}.png`);
+    })
+    print.info("批量重命名执行完成！")
+}
+
+
+
+//公共方法区域
 function getRootPath(){
     return getWinPath(process.cwd());
 }
@@ -145,6 +151,20 @@ function getWinPath(result){
     return result.replace(/\\/g, '/');
 }
 
+function getRootFiles(){
+    //TODO 这里默认文件是按名称进行排序的且文件以数字进行命名，重置顺序让文件从大到小进行覆写以避免其他文件被覆盖，这里使用排序更符合需求，不过js对于这种'01-450.png'的字符串进行sort排序并不能保证按所需排序，想要处理相对麻烦，暂时没有必要，所以使用reverse作为临时方案，不过某些情况下可能出错
+    return fs.readdirSync(getRootPath()).reverse();
+}
+
 function checkSep(filename){
     if(!filename.includes(sep)) throw new Error("文件名缺少指定分隔符！");
+}
+
+function createUtils(){
+    return {
+        addZero(n){
+            if(n<10) return '00'.concat(n);
+            return n<100 ? '0'.concat(n) : n;
+        }
+    }
 }
