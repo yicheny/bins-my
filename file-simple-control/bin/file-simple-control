@@ -84,7 +84,7 @@ function setPrefix(){
 function setSuffix(){
     const [base,start,end] = getSuffixParams();
 
-    const files = getRootFiles();
+    const files = getRootFiles(Number(base) > 0);
     renameFiles(getNewFileNames(files))
     print.info("批量修改执行完成")
 
@@ -152,9 +152,10 @@ function getWinPath(result){
     return result.replace(/\\/g, '/');
 }
 
-function getRootFiles(){
+function getRootFiles(isReverse=true){
+    const files = fs.readdirSync(getRootPath());
     //TODO 这里默认文件是按名称进行排序的且文件以数字进行命名，重置顺序让文件从大到小进行覆写以避免其他文件被覆盖，这里使用排序更符合需求，不过js对于这种'01-450.png'的字符串进行sort排序并不能保证按所需排序，想要处理相对麻烦，暂时没有必要，所以使用reverse作为临时方案，不过某些情况下可能出错
-    return fs.readdirSync(getRootPath()).reverse();
+    return isReverse ? files.reverse() : files;
 }
 
 function checkSep(filename){
