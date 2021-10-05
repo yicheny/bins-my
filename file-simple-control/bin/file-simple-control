@@ -134,11 +134,33 @@ function setSuffix(){
 
 function resetNames() {
     const files = getRootFiles();
-    files.forEach((fileName,index) => {
-        const no = files.length - index;
-        fs.renameSync(fileName,`${utils.addZero(no)}.png`);
+    files.sort(filenameCompare).forEach((fileName,index) => {
+        fs.renameSync(fileName,`${utils.addZero(index + 1)}.png`);
     })
     print.info("批量重命名执行完成！")
+
+    function filenameCompare(v1,v2){
+        const fv1 = getFormatValue(v1);
+        const fv2 = getFormatValue(v2);
+        if(fv1.sourceNo === fv2.sourceNo) return fv1.appendNo - fv2.appendNo;
+        return fv1.sourceNo - fv2.sourceNo;
+
+        function someHashAppend(fv1,fv2){
+            return [fv1,fv2].some(o => o.hasAppend)
+        }
+
+        function getFormatValue(v){
+            const [pureName] = v.split('.')
+            const hasAppend = pureName.includes('-')
+            if(!hasAppend) return {sourceNo:pureName,hasAppend}
+            const [sourceNo,appendNo] = pureName.split('-')
+            return {
+                hasAppend,
+                sourceNo,
+                appendNo
+            }
+        }
+    }
 }
 
 
