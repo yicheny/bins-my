@@ -134,11 +134,16 @@ function setSuffix(){
 
 function resetNames() {
     const files = getRootFiles();
-    files.sort(filenameCompare).reverse().forEach((fileName,index) => {
-        const no = files.length - index;
+    filterIgnore(files).sort(filenameCompare).reverse().forEach((fileName,index,array) => {
+        const no = array.length - index;
         fs.renameSync(fileName,`${utils.addZero(no)}.png`);
     })
     print.info("批量重命名执行完成！")
+
+    function filterIgnore(files){
+        const IGNORES = ['.zip','.rar','.7z']
+        return files.filter(x => !IGNORES.some(i => x.endsWith(i)))
+    }
 
     function filenameCompare(v1,v2){
         const fv1 = getFormatValue(v1);
