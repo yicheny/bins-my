@@ -39,7 +39,9 @@ function printHelpInfo(){
 
     function getHelpInfo(){
         return [
-            'usage: dynamic-pack [path] [options]',
+            'usage: dynamic-pack [-hv]',
+            'usage: dynamic-pack [-s=base,start,end]',
+            'usage: dynamic-pack [-r suffix]',
             '',
             'options',
             '-h --help          打印这个列表并退出',
@@ -134,9 +136,10 @@ function setSuffix(){
 
 function resetNames() {
     const files = getRootFiles();
+    const suffix = argv.r || argv.reset || 'png'
     filterIgnore(files).sort(filenameCompare).reverse().forEach((fileName,index,array) => {
         const no = array.length - index;
-        fs.renameSync(fileName,`${utils.addZero(no)}.png`);
+        fs.renameSync(fileName,`${utils.addZero(no)}.${suffix}`);
     })
     print.info("批量重命名执行完成！")
 
