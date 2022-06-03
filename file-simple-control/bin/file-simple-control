@@ -135,36 +135,51 @@ function setSuffix(){
 }
 
 function resetNames() {
-    const files = getRootFiles();
-    const suffix = argv.r || argv.reset || 'png'
-    filterIgnore(files).sort(filenameCompare).reverse().forEach((fileName,index,array) => {
-        const no = array.length - index;
-        fs.renameSync(fileName,`${utils.addZero(no)}.${suffix}`);
-    })
-    print.info("批量重命名执行完成！")
+    createTmp()
+    tmpToFile()
+    print.info(`完成，共重命名${getFilterFiles().length}项文件！`)
 
-    function filterIgnore(files){
-        const IGNORES = ['.zip','.rar','.7z']
-        return files.filter(x => !IGNORES.some(i => x.endsWith(i)))
-    }
+    function createTmp(){
+        getFilterFiles().sort(filenameCompare).reverse().forEach((fileName,index,array) => {
+            const no = array.length - index;
+            fs.renameSync(fileName,`__${utils.addZero(no)}.${getSuffix()}`);
+        })
 
-    function filenameCompare(v1,v2){
-        const fv1 = getFormatValue(v1);
-        const fv2 = getFormatValue(v2);
-        if(fv1.sourceNo === fv2.sourceNo) return fv1.appendNo - fv2.appendNo;
-        return fv1.sourceNo - fv2.sourceNo;
+        function getSuffix(){
+            let result = argv.r || argv.reset
+            return isString(result) ? result : 'png'
+        }
 
-        function getFormatValue(v){
-            const [pureName] = v.split('.')
-            const hasAppend = pureName.includes('-')
-            if(!hasAppend) return {sourceNo:pureName,hasAppend}
-            const [sourceNo,appendNo] = pureName.split('-')
-            return {
-                hasAppend,
-                sourceNo,
-                appendNo
+        function filenameCompare(v1,v2){
+            const fv1 = getFormatValue(v1);
+            const fv2 = getFormatValue(v2);
+            if(fv1.sourceNo === fv2.sourceNo) return fv1.appendNo - fv2.appendNo;
+            return fv1.sourceNo - fv2.sourceNo;
+
+            function getFormatValue(v){
+                const [pureName] = v.split('.')
+                const hasAppend = pureName.includes('-')
+                if(!hasAppend) return {sourceNo:pureName,hasAppend}
+                const [sourceNo,appendNo] = pureName.split('-')
+                return {
+                    hasAppend,
+                    sourceNo,
+                    appendNo
+                }
             }
         }
+    }
+
+    function tmpToFile(){
+        getFilterFiles().forEach(filename=>{
+            fs.renameSync(filename,filename.slice(2));
+        })
+    }
+
+    function getFilterFiles(){
+        const files = getRootFiles();
+        const IGNORES = ['.zip','.rar','.7z']
+        return files.filter(x => !IGNORES.some(i => x.endsWith(i)))
     }
 }
 
@@ -196,4 +211,8 @@ function createUtils(){
             return n<100 ? '0'.concat(n) : n;
         }
     }
+}
+
+function isString(x){
+    return typeof x === 'string'
 }
