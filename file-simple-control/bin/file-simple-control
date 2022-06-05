@@ -41,14 +41,15 @@ function printHelpInfo(){
         return [
             'usage: dynamic-pack [-hv]',
             'usage: dynamic-pack [-s base,start,end]',
-            'usage: dynamic-pack [-r suffix]',
+            'usage: dynamic-pack [-r]',
             '',
             'options',
             '-h --help          打印这个列表并退出',
             '-v --version       打印当前版本并退出',
             '-p --prefix        设置文件前缀',
             '-s --suffix        批量修改文件后缀，参数base,start,end',
-            '-r --reset         批量重置文件名'
+            '-r --reset         批量重置文件名',
+            '-z --zip           批量压缩文件'
         ].join('\n');
     }
 }
@@ -144,13 +145,8 @@ function resetNames() {
 
     function createTmp(){
         getFilterFiles().sort(filenameCompare).forEach((fileName,index) => {
-            fs.renameSync(fileName,`__${utils.addZero(index+1)}.${getSuffix()}`);
+            fs.renameSync(fileName,`__${utils.addZero(index+1)}.${getSuffix(fileName)}`);
         })
-
-        function getSuffix(){
-            let result = argv.r || argv.reset
-            return isString(result) ? result : 'png'
-        }
 
         //TODO 后缀数大于10的时候排序还是会有问题
         function filenameCompare(v1,v2){
@@ -208,4 +204,9 @@ function createUtils(){
 
 function isString(x){
     return typeof x === 'string'
+}
+
+function getSuffix(name){
+    const [,suffix] = name.split('.');
+    return suffix
 }
