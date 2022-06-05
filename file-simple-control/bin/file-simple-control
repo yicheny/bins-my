@@ -40,7 +40,7 @@ function printHelpInfo(){
     function getHelpInfo(){
         return [
             'usage: dynamic-pack [-hv]',
-            'usage: dynamic-pack [-s=base,start,end]',
+            'usage: dynamic-pack [-s base,start,end]',
             'usage: dynamic-pack [-r suffix]',
             '',
             'options',
@@ -86,7 +86,7 @@ function setPrefix(){
 function setSuffix(){
     const [base,start,end] = getSuffixParams();
 
-    const files = getRootFiles(Number(base) > 0);
+    const files = getFilterFiles();
     renameFiles(getNewFileNames(files))
     print.info("批量修改执行完成")
 
@@ -112,7 +112,10 @@ function setSuffix(){
 
     function renameFiles(newFileNames){
         newFileNames.forEach((x,i)=>{
-            fs.renameSync(files[i],x)
+            fs.renameSync(files[i],`__${x}`)
+        })
+        getFilterFiles().forEach(filename=>{
+            fs.renameSync(filename,filename.slice(2));
         })
     }
 
@@ -176,14 +179,8 @@ function resetNames() {
         })
     }
 
-    function getFilterFiles(){
-        const files = getRootFiles();
-        const IGNORES = ['.zip','.rar','.7z']
-        return files.filter(x => !IGNORES.some(i => x.endsWith(i)))
-    }
+
 }
-
-
 
 //公共方法区域
 function getRootPath(){
@@ -194,10 +191,14 @@ function getWinPath(result){
     return result.replace(/\\/g, '/');
 }
 
-function getRootFiles(isReverse=true){
-    const files = fs.readdirSync(getRootPath());
-    //TODO 这里默认文件是按名称进行排序的且文件以数字进行命名，重置顺序让文件从大到小进行覆写以避免其他文件被覆盖，这里使用排序更符合需求，不过js对于这种'01-450.png'的字符串进行sort排序并不能保证按所需排序，想要处理相对麻烦，暂时没有必要，所以使用reverse作为临时方案，不过某些情况下可能出错
-    return isReverse ? files.reverse() : files;
+function getFilterFiles(){
+    const files = getRootFiles();
+    const IGNORES = ['.zip','.rar','.7z']
+    return files.filter(x => !IGNORES.some(i => x.endsWith(i)))
+}
+
+function getRootFiles(){
+    return fs.readdirSync(getRootPath());
 }
 
 function checkSep(filename){
