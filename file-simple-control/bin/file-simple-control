@@ -6,6 +6,7 @@ const argv = require('minimist')(process.argv.slice(2));
 const colors  = require('colors/safe');
 // const path = require('path');
 const fs = require('fs')
+const archiver = require('archiver');
 
 const utils = createUtils();
 const sep = '-';
@@ -20,6 +21,7 @@ function main(){
     if(argv.p || argv.prifix) setPrefix();
     if(argv.s || argv.suffix) setSuffix();
     if(argv.r || argv.reset) resetNames();
+    if(argv.z || argv.zip) zip();
 }
 
 function createPrint(){
@@ -148,7 +150,7 @@ function resetNames() {
             fs.renameSync(fileName,`__${utils.addZero(index+1)}.${getSuffix(fileName)}`);
         })
 
-        //TODO 后缀数大于10的时候排序还是会有问题
+        //TODO 后缀数大于9的时候排序还是会有问题
         function filenameCompare(v1,v2){
             const fv1 = getFormatValue(v1);
             const fv2 = getFormatValue(v2);
@@ -166,8 +168,32 @@ function resetNames() {
             fs.renameSync(filename,filename.slice(2));
         })
     }
+}
 
+//TODO archiver压缩速度太慢了，难以接受
+function zip(){
+    const timer = createTimer('压缩进行中……')
 
+    const output = fs.createWriteStream(`${getRootPath()}/${getBaseName()}.zip`);
+    const archive = archiver('zip', {
+        zlib: { level: 9 }
+    });
+
+    archive.on("error",error=>{
+        print.error("压缩出错",error)
+    })
+
+    output.on('close',()=>{
+        timer.stop()
+        print.info(`压缩完成，耗时：${timer.getDiff()}秒！`)
+    })
+
+    archive.pipe(output);
+    getFilterFiles().forEach(filename=>{
+        archive.append(fs.createReadStream(`${getRootPath()}/${filename}`), { name: filename });
+    })
+
+    archive.finalize();
 }
 
 //公共方法区域
@@ -209,4 +235,27 @@ function isString(x){
 function getSuffix(name){
     const [,suffix] = name.split('.');
     return suffix
+}
+
+function getBaseName(){
+    const s = getRootPath().split('/')
+    return s[s.length-1]
+}
+
+function createTimer(info,interval=1000){
+    let t = new Date().getTime();
+    print.info(info)
+    const timeId = setInterval(()=>{
+        print.info(info)
+    },interval)
+
+    return {
+        getDiff(){
+            const c = (new Date()).getTime()
+            return (c-t)/1000
+        },
+        stop(){
+            clearInterval(timeId)
+        }
+    }
 }
