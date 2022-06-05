@@ -143,9 +143,8 @@ function resetNames() {
     print.info(`完成，共重命名${getFilterFiles().length}项文件！`)
 
     function createTmp(){
-        getFilterFiles().sort(filenameCompare).reverse().forEach((fileName,index,array) => {
-            const no = array.length - index;
-            fs.renameSync(fileName,`__${utils.addZero(no)}.${getSuffix()}`);
+        getFilterFiles().sort(filenameCompare).forEach((fileName,index) => {
+            fs.renameSync(fileName,`__${utils.addZero(index+1)}.${getSuffix()}`);
         })
 
         function getSuffix(){
@@ -153,22 +152,15 @@ function resetNames() {
             return isString(result) ? result : 'png'
         }
 
+        //TODO 后缀数大于10的时候排序还是会有问题
         function filenameCompare(v1,v2){
             const fv1 = getFormatValue(v1);
             const fv2 = getFormatValue(v2);
-            if(fv1.sourceNo === fv2.sourceNo) return fv1.appendNo - fv2.appendNo;
-            return fv1.sourceNo - fv2.sourceNo;
+            return fv1 - fv2;
 
             function getFormatValue(v){
                 const [pureName] = v.split('.')
-                const hasAppend = pureName.includes('-')
-                if(!hasAppend) return {sourceNo:pureName,hasAppend}
-                const [sourceNo,appendNo] = pureName.split('-')
-                return {
-                    hasAppend,
-                    sourceNo,
-                    appendNo
-                }
+                return pureName.replace('-','.')
             }
         }
     }
