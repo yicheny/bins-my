@@ -176,7 +176,7 @@ function zip(){
 
     const output = fs.createWriteStream(`${getRootPath()}/${getBaseName()}.zip`);
     const archive = archiver('zip', {
-        zlib: { level: 9 }
+        zlib: { level: -1 }
     });
 
     archive.on("error",error=>{
