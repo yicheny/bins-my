@@ -2,15 +2,15 @@
 
 'use strict';
 
+//原生模块及第三方库
 const argv = require('minimist')(process.argv.slice(2));
-const colors  = require('colors/safe');
-// const path = require('path');
 const fs = require('fs')
-const archiver = require('archiver');
 
-const utils = createUtils();
-const sep = '-';
-const print = createPrint();
+//基础模块
+const {SEP,print,utils,ePath} = require('./base')
+
+//功能模块
+const zip = require("./command/zip")
 
 tryExecute(main);
 
@@ -22,17 +22,6 @@ function main(){
     if(argv.s || argv.suffix) setSuffix();
     if(argv.r || argv.reset) resetNames();
     if(argv.z || argv.zip) zip();
-}
-
-function createPrint(){
-    return {
-        info(text){
-            console.log(text)
-        },
-        error(text){
-            console.log(colors.red(text))
-        }
-    }
 }
 
 function printHelpInfo(){
@@ -71,11 +60,11 @@ async function tryExecute(callback){
 
 function setPrefix(){
     const newPrefix = argv.p || argv.prefix;
-    const rootPath = getRootPath();
+    const rootPath = ePath.getRootPath();
     const files = fs.readdirSync(rootPath);
     files.forEach(filename=>{
         checkSep(filename);
-        const [prefix,name] = filename.split(sep);
+        const [prefix,name] = filename.split(SEP);
         if(!prefix) throw new Error("文件名缺少前缀！");
         const newFileName = ''.concat(addZero(newPrefix),'-',name);
         fs.renameSync(filename,newFileName);
@@ -99,7 +88,7 @@ function setSuffix(){
         });
 
        function hasSep(filename){
-           return filename.includes(sep)
+           return filename.includes(SEP)
        }
 
        function getName(name){
@@ -108,7 +97,7 @@ function setSuffix(){
        }
 
        function getNameWithPrefix(filename){
-           const [prefix,name] = filename.split(sep);
+           const [prefix,name] = filename.split(SEP);
            return `${prefix}-${getName(name)}`;
        }
     }
@@ -170,41 +159,7 @@ function resetNames() {
     }
 }
 
-//TODO archiver压缩速度太慢了，难以接受
-function zip(){
-    const timer = createTimer('压缩进行中……')
-
-    const output = fs.createWriteStream(`${getRootPath()}/${getBaseName()}.zip`);
-    const archive = archiver('zip', {
-        zlib: { level: -1 }
-    });
-
-    archive.on("error",error=>{
-        print.error("压缩出错",error)
-    })
-
-    output.on('close',()=>{
-        timer.stop()
-        print.info(`压缩完成，耗时：${timer.getDiff()}秒！`)
-    })
-
-    archive.pipe(output);
-    getFilterFiles().forEach(filename=>{
-        archive.append(fs.createReadStream(`${getRootPath()}/${filename}`), { name: filename });
-    })
-
-    archive.finalize();
-}
-
 //公共方法区域
-function getRootPath(){
-    return getWinPath(process.cwd());
-}
-
-function getWinPath(result){
-    return result.replace(/\\/g, '/');
-}
-
 function getFilterFiles(){
     const files = getRootFiles();
     const IGNORES = ['.zip','.rar','.7z']
@@ -212,24 +167,11 @@ function getFilterFiles(){
 }
 
 function getRootFiles(){
-    return fs.readdirSync(getRootPath());
+    return fs.readdirSync(ePath.getRootPath());
 }
 
 function checkSep(filename){
-    if(!filename.includes(sep)) throw new Error("文件名缺少指定分隔符！");
-}
-
-function createUtils(){
-    return {
-        addZero(n){
-            if(n<10) return '00'.concat(n);
-            return n<100 ? '0'.concat(n) : n;
-        }
-    }
-}
-
-function isString(x){
-    return typeof x === 'string'
+    if(!filename.includes(SEP)) throw new Error("文件名缺少指定分隔符！");
 }
 
 function getSuffix(name){
@@ -237,25 +179,3 @@ function getSuffix(name){
     return suffix
 }
 
-function getBaseName(){
-    const s = getRootPath().split('/')
-    return s[s.length-1]
-}
-
-function createTimer(info,interval=1000){
-    let t = new Date().getTime();
-    print.info(info)
-    const timeId = setInterval(()=>{
-        print.info(info)
-    },interval)
-
-    return {
-        getDiff(){
-            const c = (new Date()).getTime()
-            return (c-t)/1000
-        },
-        stop(){
-            clearInterval(timeId)
-        }
-    }
-}
